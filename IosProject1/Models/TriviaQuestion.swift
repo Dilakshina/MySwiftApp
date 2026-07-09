@@ -1,7 +1,12 @@
-import Foundation
-import UIKit
+//
+//  TriviaQuestion.swift
+//  IosProject1
+//
+//  Created by Dilakshina Fernando  on 2026-07-09.
+//
 
-// Outer wrapper matching the Open Trivia DB response.
+import Foundation
+
 struct TriviaResponse: Codable {
     let responseCode: Int
     let results: [TriviaQuestion]
@@ -20,8 +25,7 @@ struct TriviaQuestion: Codable, Identifiable {
     let question: String
     let correctAnswer: String
     let incorrectAnswers: [String]
-    
-    // Stored shuffled set of all answers for display.
+
     var allAnswers: [String] = []
 
     enum CodingKeys: String, CodingKey {
@@ -38,31 +42,42 @@ struct TriviaQuestion: Codable, Identifiable {
         self.category = try container.decode(String.self, forKey: .category)
         self.type = try container.decode(String.self, forKey: .type)
         self.difficulty = try container.decode(String.self, forKey: .difficulty)
-        
+
         let rawQuestion = try container.decode(String.self, forKey: .question)
         self.question = rawQuestion.htmlDecoded
-        
+
         let rawCorrectAnswer = try container.decode(String.self, forKey: .correctAnswer)
         self.correctAnswer = rawCorrectAnswer.htmlDecoded
-        
+
         let rawIncorrectAnswers = try container.decode([String].self, forKey: .incorrectAnswers)
         self.incorrectAnswers = rawIncorrectAnswers.map { $0.htmlDecoded }
-        
+
         self.allAnswers = (self.incorrectAnswers + [self.correctAnswer]).shuffled()
     }
 }
 
 extension String {
     var htmlDecoded: String {
-        guard let data = self.data(using: .utf8) else { return self }
-        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
-            .documentType: NSAttributedString.DocumentType.html,
-            .characterEncoding: String.Encoding.utf8.rawValue
+        var result = self
+        let replacements: [(String, String)] = [
+            ("&quot;", "\""),
+            ("&#039;", "'"),
+            ("&apos;", "'"),
+            ("&amp;", "&"),
+            ("&lt;", "<"),
+            ("&gt;", ">"),
+            ("&eacute;", "é"),
+            ("&hellip;", "…"),
+            ("&ndash;", "–"),
+            ("&mdash;", "—"),
+            ("&rsquo;", "'"),
+            ("&lsquo;", "'"),
+            ("&ldquo;", "\""),
+            ("&rdquo;", "\"")
         ]
-        if let attributedString = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
-            return attributedString.string
+        for (entity, replacement) in replacements {
+            result = result.replacingOccurrences(of: entity, with: replacement)
         }
-        return self
+        return result
     }
 }
-

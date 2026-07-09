@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 
-@MainActor
 final class QuizRushVM: ObservableObject {
 
     enum ViewState {
@@ -16,10 +15,11 @@ final class QuizRushVM: ObservableObject {
     @Published var streak: Int = 0
     @Published var viewState: ViewState = .loading
 
-    // Feedback states for animations
     @Published var selectedAnswer: String? = nil
     @Published var isCorrect: Bool? = nil
     @Published var isSubmitting: Bool = false
+
+    private let highScoreKey = "quizRushHighScore"
 
     var currentQuestion: TriviaQuestion? {
         guard questions.indices.contains(currentIndex) else { return nil }
@@ -28,6 +28,10 @@ final class QuizRushVM: ObservableObject {
 
     var isFinished: Bool {
         !questions.isEmpty && currentIndex >= questions.count
+    }
+
+    var highScore: Int {
+        UserDefaults.standard.integer(forKey: highScoreKey)
     }
 
     func loadQuestions() async {
@@ -51,24 +55,33 @@ final class QuizRushVM: ObservableObject {
         guard let question = currentQuestion, !isSubmitting else { return }
         isSubmitting = true
         selectedAnswer = answer
-        
+
         let correct = (answer == question.correctAnswer)
         isCorrect = correct
-        
+
         if correct {
             streak += 1
             score += 10 + (streak * 2)
         } else {
             streak = 0
         }
-        
-        // Delay 0.8 seconds to display feedback flash/shake
+
         try? await Task.sleep(nanoseconds: 800_000_000)
-        
+
         selectedAnswer = nil
         isCorrect = nil
         isSubmitting = false
         currentIndex += 1
+
+        if isFinished {
+            saveHighScoreIfNeeded()
+        }
+    }
+
+    private func saveHighScoreIfNeeded() {
+        let current = UserDefaults.standard.integer(forKey: highScoreKey)
+        if score > current {
+            UserDefaults.standard.set(score, forKey: highScoreKey)
+        }
     }
 }
-

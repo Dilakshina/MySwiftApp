@@ -1,4 +1,9 @@
-
+//
+//  LightItUpView.swift
+//  IosProject1
+//
+//  Created by Dilakshina Fernando  on 2026-07-09.
+//
 
 import SwiftUI
 import Combine
@@ -83,6 +88,16 @@ struct LightItUpView: View {
 
     var body: some View {
         ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.05, green: 0.06, blue: 0.18),
+                    Color(red: 0.20, green: 0.08, blue: 0.25)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
             VStack(spacing: 24) {
                 if !gameActive && roundElapsed == 0 {
                     startScreen
@@ -99,6 +114,8 @@ struct LightItUpView: View {
             }
         }
         .navigationTitle("Light It Up")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .onReceive(clock) { _ in
             guard gameActive else { return }
             tick()
@@ -106,20 +123,39 @@ struct LightItUpView: View {
     }
 
     private var startScreen: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
+            Image(systemName: "lightbulb.max.fill")
+                .font(.system(size: 80))
+                .foregroundStyle(
+                    LinearGradient(colors: [.orange, .yellow], startPoint: .top, endPoint: .bottom)
+                )
+                .shadow(color: .orange.opacity(0.6), radius: 20)
+
             Text("Light It Up")
-                .font(.largeTitle).bold()
+                .font(.system(size: 42, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+
             Text("Tap the glowing card before it goes dark.\nThe grid grows. The window shrinks.")
+                .font(.callout)
                 .multilineTextAlignment(.center)
-                .foregroundColor(.secondary)
-            Button("Start Game") {
+                .foregroundStyle(.white.opacity(0.65))
+
+            Button {
                 startGame()
+            } label: {
+                Text("Start Game")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(colors: [.orange, .red], startPoint: .leading, endPoint: .trailing),
+                        in: Capsule()
+                    )
+                    .shadow(color: .orange.opacity(0.5), radius: 12, y: 6)
             }
-            .font(.title2)
-            .padding()
-            .background(Color.orange)
-            .foregroundColor(.white)
-            .cornerRadius(10)
+            .padding(.horizontal, 40)
+            .padding(.top, 20)
         }
     }
 
@@ -127,29 +163,59 @@ struct LightItUpView: View {
         VStack(spacing: 20) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Score: \(score)")
-                        .font(.title2).bold()
-                    Text("Level \(currentLevel.rawValue)")
-                        .font(.subheadline).bold()
-                        .foregroundColor(currentLevel.glowColor)
+                    Text("SCORE")
+                        .font(.caption).bold()
+                        .foregroundStyle(.white.opacity(0.5))
+                    Text("\(score)")
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
                 }
+
                 Spacer()
-                Text("\(timeRemaining)s")
-                    .font(.title)
-                    .monospacedDigit()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("LEVEL \(currentLevel.rawValue)")
+                        .font(.caption).bold()
+                        .foregroundStyle(currentLevel.glowColor)
+                    Text("\(timeRemaining)s")
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                }
             }
+            .padding(.horizontal, 4)
 
             LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: currentLevel.columns),
-                spacing: 12
+                columns: Array(repeating: GridItem(.flexible(), spacing: 14), count: currentLevel.columns),
+                spacing: 14
             ) {
                 ForEach(cards) { card in
-                    RoundedRectangle(cornerRadius: 14)
-                        .fill(card.isLit ? currentLevel.glowColor : Color.gray.opacity(0.25))
-                        .frame(height: 80)
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(
+                            card.isLit
+                            ? AnyShapeStyle(
+                                RadialGradient(
+                                    colors: [currentLevel.glowColor, currentLevel.glowColor.opacity(0.5)],
+                                    center: .center,
+                                    startRadius: 5,
+                                    endRadius: 60
+                                )
+                            )
+                            : AnyShapeStyle(Color.white.opacity(0.08))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                .strokeBorder(
+                                    card.isLit
+                                    ? currentLevel.glowColor.opacity(0.9)
+                                    : Color.white.opacity(0.12),
+                                    lineWidth: 1
+                                )
+                        )
+                        .frame(height: 90)
                         .scaleEffect(card.isLit ? 1.06 : 1.0)
                         .shadow(color: card.isLit ? currentLevel.glowColor.opacity(0.7) : .clear,
-                                radius: card.isLit ? 12 : 0)
+                                radius: card.isLit ? 18 : 0)
                         .animation(.easeInOut(duration: 0.15), value: card.isLit)
                         .onTapGesture { handleTap(card) }
                 }
@@ -160,37 +226,64 @@ struct LightItUpView: View {
     }
 
     private var gameOverScreen: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
+            Image(systemName: "trophy.fill")
+                .font(.system(size: 60))
+                .foregroundStyle(.yellow)
+
             Text("Game Over")
-                .font(.largeTitle).bold()
-            Text("Final Score: \(score)")
-                .font(.title)
+                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                .foregroundStyle(.white)
+
+            VStack(spacing: 6) {
+                Text("Final Score")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.6))
+                Text("\(score)")
+                    .font(.system(size: 56, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+
             if score >= highScore && score > 0 {
-                Text("New High Score!")
-                    .foregroundColor(.green)
-                    .bold()
+                Label("New High Score!", systemImage: "star.fill")
+                    .font(.headline)
+                    .foregroundStyle(.yellow)
             } else {
                 Text("High Score: \(highScore)")
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.6))
             }
-            Button("Play Again") {
+
+            Button {
                 resetGame()
+            } label: {
+                Text("Play Again")
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        LinearGradient(colors: [.green, .teal], startPoint: .leading, endPoint: .trailing),
+                        in: Capsule()
+                    )
+                    .shadow(color: .green.opacity(0.5), radius: 12, y: 6)
             }
-            .font(.title2)
-            .padding()
-            .background(Color.green)
-            .foregroundColor(.white)
-            .cornerRadius(12)
+            .padding(.horizontal, 40)
+            .padding(.top, 12)
         }
     }
 
     private var levelUpFlash: some View {
         Text("LEVEL \(currentLevel.rawValue)")
-            .font(.system(size: 40, weight: .heavy))
-            .foregroundColor(.white)
-            .padding(.horizontal, 32)
-            .padding(.vertical, 18)
-            .background(currentLevel.glowColor.opacity(0.9))
-            .cornerRadius(18)
+            .font(.system(size: 48, weight: .heavy, design: .rounded))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 40)
+            .padding(.vertical, 22)
+            .background(
+                Capsule()
+                    .fill(currentLevel.glowColor.opacity(0.9))
+                    .shadow(color: currentLevel.glowColor, radius: 30)
+            )
             .transition(.scale.combined(with: .opacity))
             .zIndex(1)
     }
@@ -273,7 +366,7 @@ struct LightItUpView: View {
     }
 
     private func triggerLevelUpFlash() {
-        withAnimation { showLevelUpFlash = true }
+        withAnimation(.spring()) { showLevelUpFlash = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
             withAnimation { showLevelUpFlash = false }
         }
@@ -292,4 +385,3 @@ struct LightItUpView: View {
         LightItUpView()
     }
 }
-
