@@ -1,10 +1,3 @@
-//
-//  TriviaQuestion.swift
-//  IosProject1
-//
-//  Created by Dilakshina Fernando  on 2026-07-09.
-//
-
 import Foundation
 
 // Outer wrapper matching the Open Trivia DB response.
@@ -26,6 +19,9 @@ struct TriviaQuestion: Codable, Identifiable {
     let question: String
     let correctAnswer: String
     let incorrectAnswers: [String]
+    
+    // Stored shuffled set of all answers for display.
+    var allAnswers: [String] = []
 
     enum CodingKeys: String, CodingKey {
         case category
@@ -36,8 +32,36 @@ struct TriviaQuestion: Codable, Identifiable {
         case incorrectAnswers = "incorrect_answers"
     }
 
-    // Shuffled set of all answers for display.
-    var allAnswers: [String] {
-        (incorrectAnswers + [correctAnswer]).shuffled()
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.category = try container.decode(String.self, forKey: .category)
+        self.type = try container.decode(String.self, forKey: .type)
+        self.difficulty = try container.decode(String.self, forKey: .difficulty)
+        
+        let rawQuestion = try container.decode(String.self, forKey: .question)
+        self.question = rawQuestion.htmlDecoded
+        
+        let rawCorrectAnswer = try container.decode(String.self, forKey: .correctAnswer)
+        self.correctAnswer = rawCorrectAnswer.htmlDecoded
+        
+        let rawIncorrectAnswers = try container.decode([String].self, forKey: .incorrectAnswers)
+        self.incorrectAnswers = rawIncorrectAnswers.map { $0.htmlDecoded }
+        
+        self.allAnswers = (self.incorrectAnswers + [self.correctAnswer]).shuffled()
     }
 }
+
+extension String {
+    var htmlDecoded: String {
+        guard let data = self.data(using: .utf8) else { return self }
+        let options: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+            .documentType: NSAttributedString.DocumentType.html,
+            .characterEncoding: String.Encoding.utf8.rawValue
+        ]
+        if let attributedString = try? NSAttributedString(data: data, options: options, documentAttributes: nil) {
+            return attributedString.string
+        }
+        return self
+    }
+}
+
