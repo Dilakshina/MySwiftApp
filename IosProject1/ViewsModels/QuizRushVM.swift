@@ -1,9 +1,4 @@
-//
-//  QuizRushVM.swift
-//  IosProject1
-//
-//  Created by Dilakshina Fernando  on 2026-07-09.
-//
+
 
 import Foundation
 
@@ -22,6 +17,11 @@ final class QuizRushVM: ObservableObject {
     @Published var streak: Int = 0
     @Published var viewState: ViewState = .loading
 
+    // Feedback states for animations
+    @Published var selectedAnswer: String? = nil
+    @Published var isCorrect: Bool? = nil
+    @Published var isSubmitting: Bool = false
+
     var currentQuestion: TriviaQuestion? {
         guard questions.indices.contains(currentIndex) else { return nil }
         return questions[currentIndex]
@@ -33,6 +33,9 @@ final class QuizRushVM: ObservableObject {
 
     func loadQuestions() async {
         viewState = .loading
+        selectedAnswer = nil
+        isCorrect = nil
+        isSubmitting = false
         do {
             let fetched = try await TriviaAPI.fetchQuestions(amount: 10)
             questions = fetched
@@ -45,14 +48,28 @@ final class QuizRushVM: ObservableObject {
         }
     }
 
-    func submit(answer: String) {
-        guard let question = currentQuestion else { return }
-        if answer == question.correctAnswer {
+    func submit(answer: String) async {
+        guard let question = currentQuestion, !isSubmitting else { return }
+        isSubmitting = true
+        selectedAnswer = answer
+        
+        let correct = (answer == question.correctAnswer)
+        isCorrect = correct
+        
+        if correct {
             streak += 1
             score += 10 + (streak * 2)
         } else {
             streak = 0
         }
+        
+        // Delay 0.8 seconds to display feedback flash/shake
+        try? await Task.sleep(nanoseconds: 800_000_000)
+        
+        selectedAnswer = nil
+        isCorrect = nil
+        isSubmitting = false
         currentIndex += 1
     }
 }
+
