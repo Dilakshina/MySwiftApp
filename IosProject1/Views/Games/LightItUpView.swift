@@ -1,11 +1,7 @@
-//
-//  LightItUpView.swift
-//  IosProject1
-//
-//  Created by Dilakshina Fernando  on 2026-07-09.
-//
+
 
 import SwiftUI
+import Combine
 
 struct LightCard: Identifiable {
     let id = UUID()
@@ -296,3 +292,4 @@ struct LightItUpView: View {
         LightItUpView()
     }
 }
+

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 // Outer wrapper matching the Open Trivia DB response.
 struct TriviaResponse: Codable {
